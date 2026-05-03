@@ -676,10 +676,15 @@
       <div id="search-confirm" class="hidden">
         <div class="selected-food-box">
           <div class="sfb-name" id="sfb-name"></div>
-          <div class="sfb-unit" id="sfb-unit"></div>
+          <div class="sfb-unit" id="sfb-unit" style="color:var(--sub);font-size:13px;margin-top:2px"></div>
         </div>
-        <div class="fg" style="margin-top:10px"><label>כמות קלוריות (ניתן לשנות)</label>
-          <div class="iw"><input type="number" id="sfb-cals" min="0" max="5000"><span class="unit">קל'</span></div>
+        <div class="two-col" style="margin-top:10px">
+          <div class="fg"><label>כמות מנות</label>
+            <div class="iw"><input type="number" id="sfb-qty" value="1" min="0.25" max="20" step="0.25" oninput="updateCalcCals()"><span class="unit">×</span></div>
+          </div>
+          <div class="fg"><label>קלוריות סה"כ</label>
+            <div class="iw"><input type="number" id="sfb-cals" min="0" max="9999"><span class="unit">קל'</span></div>
+          </div>
         </div>
         <div class="modal-row">
           <button class="btn-cancel" onclick="clearSearch()">חזור</button>
@@ -1362,6 +1367,8 @@ function openAddModal() {
     document.getElementById('search-results').style.display = '';
     document.getElementById('search-results').innerHTML =
         '<div class="search-hint">התחל להקליד כדי לחפש במאגר המזונות</div>';
+    set('sfb-qty', 1);
+    _baseCals = 0;
     hide('search-confirm');
 }
 
@@ -1412,13 +1419,22 @@ function onFoodSearch(query) {
         </div>`).join('');
 }
 
+let _baseCals = 0;
+
 function selectFood(idx, name, cals, unit) {
+    _baseCals = cals;
     document.getElementById('sfb-name').textContent = name;
-    document.getElementById('sfb-unit').textContent = unit;
+    document.getElementById('sfb-unit').textContent = 'מנה אחת = ' + cals + " קל' (" + unit + ')';
+    set('sfb-qty', 1);
     set('sfb-cals', cals);
     show('search-confirm');
     document.getElementById('search-results').style.display = 'none';
     document.getElementById('food-search').disabled = true;
+}
+
+function updateCalcCals() {
+    const qty = parseFloat(document.getElementById('sfb-qty').value) || 1;
+    set('sfb-cals', Math.round(_baseCals * qty));
 }
 
 function clearSearch() {
