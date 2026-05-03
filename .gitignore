@@ -1,0 +1,6 @@
+.env
+.env.txt
+__pycache__/
+*.pyc
+venv/
+calorie_data.db
