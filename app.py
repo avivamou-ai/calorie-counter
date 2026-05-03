@@ -479,9 +479,10 @@ def analyze_image():
         return jsonify({'error': str(e)}), 500
 
 
+init_db()
+generate_icons()
+
 if __name__ == '__main__':
-    init_db()
-    generate_icons()
     print('\nCalorie Counter running!')
     print('Open browser: http://localhost:5000\n')
     app.run(debug=True, port=5000)
