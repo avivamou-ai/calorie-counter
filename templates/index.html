@@ -194,7 +194,7 @@
         .slbl{font-size:13px;color:var(--sub)}
         .sval{font-weight:800;font-size:14px}
         .sval.blue{color:var(--blue)}.sval.green{color:var(--green)}
-        .sval.red{color:var(--red)}.sval.dark{color:var(--text)}
+        .sval.red{color:var(--red)}.sval.dark{color:var(--text)}.sval.orange{color:var(--orange)}
         .ssep{height:1px;background:var(--border);margin:1px 0}
 
         /* Streak badge */
@@ -244,7 +244,9 @@
         }
         .btn-act:active{transform:scale(.96);opacity:.85}
         .btn-manual{background:linear-gradient(135deg,#3498db,#2471a3);color:#fff}
+        .btn-activity{background:linear-gradient(135deg,#e67e22,#ca6f1e);color:#fff}
         .btn-photo{background:linear-gradient(135deg,#9b59b6,#7d3c98);color:#fff}
+        .orange{color:var(--orange)!important}
 
         /* ─── History tab ─── */
         .hist-item{
@@ -510,7 +512,9 @@
         <div class="ssep"></div>
         <div class="srow"><span class="slbl">נצרכו</span><span class="sval blue" id="s-consumed">0</span></div>
         <div class="ssep"></div>
-        <div class="srow"><span class="slbl">נותרו</span><span class="sval green" id="s-remaining">—</span></div>
+        <div class="srow"><span class="slbl">נשרפו 🔥</span><span class="sval orange" id="s-burned">0</span></div>
+        <div class="ssep"></div>
+        <div class="srow"><span class="slbl">נטו</span><span class="sval green" id="s-remaining">—</span></div>
       </div>
     </div>
 
@@ -537,9 +541,24 @@
       </div>
     </div>
 
+    <!-- Activity list -->
+    <div class="card">
+      <div class="card-hdr">
+        <span class="card-title">🏃 פעילות גופנית היום</span>
+        <span class="card-badge" id="activity-badge"></span>
+      </div>
+      <div id="activity-list">
+        <div class="empty-state">
+          <div class="empty-icon">🏃</div>
+          <p>לא הוזנה פעילות היום</p>
+        </div>
+      </div>
+    </div>
+
     <!-- FAB buttons -->
     <div class="fab-row">
       <button class="btn-act btn-manual" onclick="openAddModal()">🔍 הוסף מזון</button>
+      <button class="btn-act btn-activity" onclick="openModal('activity-overlay')">🏃 הוסף פעילות</button>
       <button class="btn-act btn-photo"  onclick="openModal('image-overlay')">📷 AI צילום</button>
     </div>
   </div>
@@ -800,6 +819,49 @@
   </div>
 </div>
 
+<!-- ══════ ACTIVITY MODAL ══════ -->
+<div class="overlay hidden" id="activity-overlay">
+  <div class="modal">
+    <div class="drag-h"></div>
+    <h3>🏃 הוספת פעילות גופנית</h3>
+
+    <div class="fg"><label>סוג פעילות</label>
+      <select id="act-type" style="width:100%;padding:13px 16px;border:2px solid var(--border);border-radius:12px;font-size:16px;font-family:inherit;direction:rtl;background:#fff">
+        <option value="הליכה">🚶 הליכה</option>
+        <option value="ריצה">🏃 ריצה</option>
+        <option value="אופניים">🚴 אופניים</option>
+        <option value="שחייה">🏊 שחייה</option>
+        <option value="כושר">💪 כושר / חדר כושר</option>
+        <option value="יוגה">🧘 יוגה / פילאטיס</option>
+        <option value="כדורסל">🏀 כדורסל / ספורט קבוצתי</option>
+        <option value="אחר">⚡ אחר</option>
+      </select>
+    </div>
+
+    <div class="two-col">
+      <div class="fg"><label>קלוריות שנשרפו</label>
+        <div class="iw"><input type="number" id="act-cal" placeholder="300" min="0" max="3000"><span class="unit">קל'</span></div>
+      </div>
+      <div class="fg"><label>משך (דקות)</label>
+        <div class="iw"><input type="number" id="act-dur" placeholder="45" min="0" max="600"><span class="unit">דק'</span></div>
+      </div>
+    </div>
+
+    <div class="fg"><label>צעדים (רשות)</label>
+      <div class="iw"><input type="number" id="act-steps" placeholder="8000" min="0" max="100000"><span class="unit">צעדים</span></div>
+    </div>
+
+    <div class="fg"><label>הערה (רשות)</label>
+      <input type="text" id="act-note" placeholder="תיאור קצר...">
+    </div>
+
+    <div class="modal-row">
+      <button class="btn-cancel" onclick="closeModal('activity-overlay')">ביטול</button>
+      <button class="btn-save"   onclick="submitActivity()">שמור ✓</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -863,6 +925,14 @@ const FOOD_DB = [
   {n:'טונה במים',c:100,u:'קופסה (100 גרם)'},
   {n:'דג מוסר',c:150,u:'100 גרם'},
   {n:'פלייה דג',c:170,u:'100 גרם'},
+  {n:'דג אמנון אפוי',c:96,u:'100 גרם'},
+  {n:'דג אמנון מטוגן',c:165,u:'100 גרם'},
+  {n:'דג דניס',c:130,u:'100 גרם'},
+  {n:'דג ברמונדי',c:124,u:'100 גרם'},
+  {n:'קרפיון',c:127,u:'100 גרם'},
+  {n:'בקלה',c:105,u:'100 גרם'},
+  {n:'שרימפס מבושל',c:99,u:'100 גרם'},
+  {n:'גפילטע פיש',c:120,u:'יחידה (80 גרם)'},
   // אוכל ישראלי מסורתי
   {n:'פלאפל, כדור',c:57,u:'כדור אחד'},
   {n:'פלאפל מנה + פיתה',c:450,u:'מנה שלמה'},
@@ -876,6 +946,23 @@ const FOOD_DB = [
   {n:'בורקס תפוח אדמה',c:260,u:'יחידה'},
   {n:'סמבוסק',c:200,u:'יחידה'},
   {n:'מלאווח',c:420,u:'יחידה'},
+  // קטניות ומוצרי סויה
+  {n:'פולי סויה מבושלים',c:173,u:'כוס (172 גרם)'},
+  {n:'טופו',c:76,u:'100 גרם'},
+  {n:'חומוס מבושל',c:270,u:'כוס (164 גרם)'},
+  {n:'עדשים כתומות מבושלות',c:116,u:'כוס'},
+  {n:'עדשים שחורות מבושלות',c:230,u:'כוס'},
+  {n:'שעועית שחורה מבושלת',c:227,u:'כוס'},
+  {n:'אפונה ירוקה קפואה',c:80,u:'כוס (160 גרם)'},
+  {n:'פול ירוק',c:88,u:'כוס'},
+  // בשר נוסף
+  {n:'חזה הודו',c:135,u:'100 גרם'},
+  {n:'אנטריקוט',c:270,u:'100 גרם'},
+  {n:'פילה בקר',c:217,u:'100 גרם'},
+  {n:'כתף כבש',c:258,u:'100 גרם'},
+  {n:'נקניק פרנקפורטר',c:290,u:'100 גרם'},
+  {n:'בייקון',c:540,u:'100 גרם'},
+  {n:'פסטרמה',c:147,u:'100 גרם'},
   // ירקות
   {n:'עגבנייה',c:22,u:'בינונית (123 גרם)'},
   {n:'מלפפון',c:16,u:'בינוני (120 גרם)'},
@@ -889,6 +976,17 @@ const FOOD_DB = [
   {n:'אפונה מבושלת',c:118,u:'כוס'},
   {n:'עדשים מבושלים',c:230,u:'כוס'},
   {n:'שעועית מבושלת',c:220,u:'כוס'},
+  {n:'כרובית מבושלת',c:29,u:'כוס'},
+  {n:'כרוב',c:22,u:'כוס קצוץ'},
+  {n:'תרד מבושל',c:41,u:'כוס'},
+  {n:'בצל',c:40,u:'בינוני'},
+  {n:'שום',c:5,u:'שן אחת'},
+  {n:'פטריות',c:20,u:'כוס (70 גרם)'},
+  {n:'חצילים צלויים',c:35,u:'100 גרם'},
+  {n:'קישוא מבושל',c:17,u:'כוס'},
+  {n:'סלרי',c:10,u:'גבעול'},
+  {n:'אספרגוס',c:27,u:'כוס (134 גרם)'},
+  {n:'עגבניות שרי',c:31,u:'כוס (149 גרם)'},
   // פירות
   {n:'תפוח',c:80,u:'בינוני (182 גרם)'},
   {n:'בננה',c:105,u:'בינונית (118 גרם)'},
@@ -1142,9 +1240,16 @@ function editProfile() {
 }
 
 /* ── Today ────────── */
+let todayBurned = 0;
+
 async function loadToday() {
-    const foods = await api.get('/api/food');
+    const [foods, activities] = await Promise.all([
+        api.get('/api/food'),
+        api.get('/api/activity')
+    ]);
+    todayBurned = (activities||[]).reduce((s,a) => s + a.calories_burned, 0);
     renderFoodList(foods);
+    renderActivityList(activities);
     renderProgress(foods);
 }
 
@@ -1169,28 +1274,81 @@ function renderFoodList(foods) {
         </div>`).join('');
 }
 
+function renderActivityList(activities) {
+    const el = document.getElementById('activity-list');
+    const badge = document.getElementById('activity-badge');
+    if (!activities || !activities.length) {
+        el.innerHTML = '<div class="empty-state"><div class="empty-icon">🏃</div><p>לא הוזנה פעילות היום</p></div>';
+        badge.textContent = '';
+        return;
+    }
+    const totalBurned = activities.reduce((s,a) => s + a.calories_burned, 0);
+    badge.textContent = totalBurned.toLocaleString() + " קל' נשרפו";
+    el.innerHTML = activities.map(a => `
+        <div class="food-item" id="ai-${a.id}">
+            <span class="f-emoji">${activityEmoji(a.activity_type)}</span>
+            <div class="f-info">
+                <div class="f-name">${esc(a.activity_type)}${a.duration_min ? ' · ' + a.duration_min + ' דק\'' : ''}${a.steps ? ' · ' + a.steps.toLocaleString() + ' צעדים' : ''}</div>
+                <div class="f-time">${a.note ? esc(a.note) : fmtTime(a.timestamp)}</div>
+            </div>
+            <span class="f-cal orange">-${a.calories_burned.toLocaleString()} קל'</span>
+            <button class="del-btn" onclick="removeActivity(${a.id})">🗑️</button>
+        </div>`).join('');
+}
+
+function activityEmoji(type) {
+    const map = {'הליכה':'🚶','ריצה':'🏃','אופניים':'🚴','שחייה':'🏊','כושר':'💪','יוגה':'🧘','כדורסל':'🏀'};
+    return map[type] || '⚡';
+}
+
 function renderProgress(foods) {
     if (!profile) return;
     const consumed = (foods||[]).reduce((s,f) => s+f.calories, 0);
     const goal = profile.daily_goal;
-    const pct = Math.min(consumed / goal, 1);
+    const net = consumed - todayBurned;
+    const pct = Math.min(net / goal, 1);
 
     const ring = document.getElementById('ring');
-    ring.style.strokeDashoffset = 251.3 * (1 - pct);
+    ring.style.strokeDashoffset = 251.3 * (1 - Math.max(pct, 0));
     ring.style.stroke = pct>=1 ? 'var(--red)' : pct>=.8 ? 'var(--orange)' : 'var(--green-l)';
-    document.getElementById('ring-pct').textContent = Math.round(pct*100) + '%';
+    document.getElementById('ring-pct').textContent = Math.round(Math.max(pct,0)*100) + '%';
+    document.getElementById('ring-lbl') && (document.getElementById('ring-lbl').textContent = 'נטו');
 
-    document.getElementById('s-goal-d').textContent    = goal.toLocaleString() + " קל'";
-    document.getElementById('s-consumed').textContent  = consumed.toLocaleString() + " קל'";
+    document.getElementById('s-goal-d').textContent   = goal.toLocaleString() + " קל'";
+    document.getElementById('s-consumed').textContent = consumed.toLocaleString() + " קל'";
+    document.getElementById('s-burned').textContent   = todayBurned ? todayBurned.toLocaleString() + " קל'" : '0';
 
     const remEl = document.getElementById('s-remaining');
-    const rem = goal - consumed;
+    const rem = goal - net;
     if (rem >= 0) { remEl.textContent = rem.toLocaleString() + " קל'"; remEl.className='sval green'; }
     else { remEl.textContent = '⚠️ +' + Math.abs(rem).toLocaleString() + " קל'"; remEl.className='sval red'; }
 }
 
 async function removeFood(id) {
     await api.del(`/api/food/${id}`);
+    toast('הוסר');
+    await loadToday();
+}
+
+async function submitActivity() {
+    const type = document.getElementById('act-type').value;
+    const cal  = parseInt(document.getElementById('act-cal').value) || 0;
+    const dur  = parseInt(document.getElementById('act-dur').value) || 0;
+    const steps = parseInt(document.getElementById('act-steps').value) || 0;
+    const note = document.getElementById('act-note').value.trim();
+    if (!cal) { toast('הכנס קלוריות שנשרפו'); return; }
+    await api.post('/api/activity', {activity_type: type, calories_burned: cal, duration_min: dur, steps, note});
+    closeModal('activity-overlay');
+    document.getElementById('act-cal').value = '';
+    document.getElementById('act-dur').value = '';
+    document.getElementById('act-steps').value = '';
+    document.getElementById('act-note').value = '';
+    toast('פעילות נרשמה!');
+    await loadToday();
+}
+
+async function removeActivity(id) {
+    await api.del(`/api/activity/${id}`);
     toast('הוסר');
     await loadToday();
 }

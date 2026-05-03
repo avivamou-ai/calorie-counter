@@ -68,6 +68,18 @@ def init_db():
         note    TEXT    DEFAULT ''
     )''')
 
+    c.execute('''CREATE TABLE IF NOT EXISTS activity_log (
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id      INTEGER NOT NULL DEFAULT 1,
+        date         TEXT    NOT NULL,
+        activity_type TEXT   NOT NULL,
+        calories_burned INTEGER NOT NULL,
+        steps        INTEGER DEFAULT 0,
+        duration_min INTEGER DEFAULT 0,
+        note         TEXT    DEFAULT '',
+        timestamp    TEXT    NOT NULL
+    )''')
+
     # Migrate: add missing columns
     migrations = {
         'user_profile': ['user_id', 'goal_weight'],
@@ -325,6 +337,44 @@ def add_weight():
 def delete_weight(wid):
     conn = get_db()
     conn.execute('DELETE FROM weight_log WHERE id=? AND user_id=?', (wid, uid()))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
+
+
+# ── Activity ───────────────────────────────────────────────────────
+@app.route('/api/activity', methods=['GET'])
+def get_activity():
+    log_date = request.args.get('date', date.today().isoformat())
+    conn = get_db()
+    rows = conn.execute(
+        'SELECT * FROM activity_log WHERE user_id=? AND date=? ORDER BY timestamp DESC',
+        (uid(), log_date)
+    ).fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+@app.route('/api/activity', methods=['POST'])
+def add_activity():
+    data = request.get_json()
+    conn = get_db()
+    cur = conn.execute(
+        '''INSERT INTO activity_log (user_id, date, activity_type, calories_burned, steps, duration_min, note, timestamp)
+           VALUES (?,?,?,?,?,?,?,?)''',
+        (uid(), date.today().isoformat(), data.get('activity_type','אחר'),
+         int(data.get('calories_burned', 0)), int(data.get('steps', 0)),
+         int(data.get('duration_min', 0)), data.get('note',''),
+         datetime.now().isoformat())
+    )
+    conn.commit()
+    aid = cur.lastrowid
+    conn.close()
+    return jsonify({'id': aid})
+
+@app.route('/api/activity/<int:aid>', methods=['DELETE'])
+def delete_activity(aid):
+    conn = get_db()
+    conn.execute('DELETE FROM activity_log WHERE id=? AND user_id=?', (aid, uid()))
     conn.commit()
     conn.close()
     return jsonify({'success': True})
