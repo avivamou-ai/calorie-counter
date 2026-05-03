@@ -1358,6 +1358,8 @@ function openAddModal() {
     openModal('add-overlay');
     switchAddTab('search');
     document.getElementById('food-search').value = '';
+    document.getElementById('food-search').disabled = false;
+    document.getElementById('search-results').style.display = '';
     document.getElementById('search-results').innerHTML =
         '<div class="search-hint">התחל להקליד כדי לחפש במאגר המזונות</div>';
     hide('search-confirm');
