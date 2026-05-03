@@ -1066,14 +1066,27 @@ function hideAddUserForm() {
 async function createUser() {
     const name = document.getElementById('new-user-name').value.trim();
     if (!name) { toast('אנא הכנס שם'); return; }
-    const res = await fetch('/api/users', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({name})
-    }).then(r => r.json());
-    if (res.id) {
-        hideAddUserForm();
-        selectUser(res.id, res.name, res.color);
+    const btn = document.querySelector('#add-user-form .btn-save');
+    btn.textContent = 'יוצר...';
+    btn.disabled = true;
+    try {
+        const r = await fetch('/api/users', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({name})
+        });
+        const res = await r.json();
+        if (res.id) {
+            hideAddUserForm();
+            selectUser(res.id, res.name, res.color);
+        } else {
+            toast('שגיאה: ' + (res.error || 'לא ידוע'));
+        }
+    } catch(e) {
+        toast('שגיאת רשת - בדוק חיבור');
+    } finally {
+        btn.textContent = 'צור ✓';
+        btn.disabled = false;
     }
 }
 
