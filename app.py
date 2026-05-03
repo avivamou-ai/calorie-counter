@@ -380,6 +380,42 @@ def delete_activity(aid):
     return jsonify({'success': True})
 
 
+# ── Health Sync (iPhone Shortcuts) ─────────────────────────────────
+@app.route('/api/health-sync', methods=['POST'])
+def health_sync():
+    data    = request.get_json(silent=True) or {}
+    user_id = int(data.get('uid', 1))
+    today   = date.today().isoformat()
+
+    steps           = int(data.get('steps', 0))
+    active_calories = int(data.get('active_calories', 0))
+    exercise_min    = int(data.get('exercise_minutes', 0))
+
+    if active_calories == 0 and steps == 0:
+        return jsonify({'error': 'no data'}), 400
+
+    conn = get_db()
+    # Upsert: remove previous health-sync for today, then insert fresh
+    conn.execute(
+        "DELETE FROM activity_log WHERE user_id=? AND date=? AND activity_type='health-sync'",
+        (user_id, today)
+    )
+    conn.execute(
+        '''INSERT INTO activity_log
+           (user_id, date, activity_type, calories_burned, steps, duration_min, note, timestamp)
+           VALUES (?,?,?,?,?,?,?,?)''',
+        (user_id, today, 'health-sync', active_calories,
+         steps, exercise_min,
+         f'{steps:,} צעדים · {exercise_min} דק\' פעילות',
+         datetime.now().isoformat())
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({'ok': True, 'steps': steps,
+                    'active_calories': active_calories,
+                    'exercise_minutes': exercise_min})
+
+
 # ── History ────────────────────────────────────────────────────────
 @app.route('/api/history', methods=['GET'])
 def get_history():

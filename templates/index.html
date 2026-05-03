@@ -632,6 +632,26 @@
       <div class="pi-row"><span class="pi-lbl">משקל יעד</span><span class="pi-val" id="pi-gw">—</span></div>
       <div class="pi-row"><span class="pi-lbl">יעד קלורי יומי</span><span class="pi-val" id="pi-goal">—</span></div>
     </div>
+
+    <!-- Health Sync card -->
+    <div class="card" style="margin-top:16px">
+      <div class="card-hdr"><span class="card-title">❤️ סנכרון עם אפל Health</span></div>
+      <div style="padding:4px 0 8px;font-size:13px;color:var(--sub);line-height:1.6">
+        צור Shortcut באייפון שישלח נתוני בריאות לאפליקציה אוטומטית כל יום.
+      </div>
+      <div style="font-size:12px;font-weight:700;color:var(--sub);margin-bottom:6px">כתובת ה-API לסנכרון:</div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="text" id="sync-url" readonly
+          style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:11px;background:#f8fafc;direction:ltr;color:var(--text)">
+        <button onclick="copySyncUrl()" style="padding:10px 14px;background:var(--green);color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit">העתק</button>
+      </div>
+      <div style="margin-top:12px;font-size:13px;color:var(--sub)">
+        <b style="color:var(--text)">נתונים שנשלחים:</b><br>
+        • <code>steps</code> — מספר צעדים<br>
+        • <code>active_calories</code> — קלוריות פעילות<br>
+        • <code>exercise_minutes</code> — דקות פעילות
+      </div>
+    </div>
   </div>
 
   <!-- Tab bar -->
@@ -1802,6 +1822,22 @@ async function loadStats() {
         document.getElementById('pi-gw').textContent      = profile.goal_weight ? profile.goal_weight + ' ק"ג' : 'לא הוגדר';
         document.getElementById('pi-goal').textContent    = profile.daily_goal.toLocaleString() + " קל'";
     }
+
+    // Health sync URL
+    const base = window.location.origin;
+    document.getElementById('sync-url').value =
+        `${base}/api/health-sync`;
+}
+
+function copySyncUrl() {
+    const el = document.getElementById('sync-url');
+    navigator.clipboard.writeText(el.value).then(() => {
+        toast('כתובת הועתקה!');
+    }).catch(() => {
+        el.select();
+        document.execCommand('copy');
+        toast('כתובת הועתקה!');
+    });
 }
 
 /* ── Tabs ────────── */
