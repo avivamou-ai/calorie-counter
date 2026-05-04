@@ -262,6 +262,43 @@
         .action-btn-center:active{transform:translateY(-8px) scale(.94);box-shadow:0 2px 10px rgba(39,174,96,.3)}
         .orange{color:var(--orange)!important}
 
+        /* ─── Water tracker ─── */
+        .water-card{background:linear-gradient(135deg,#e8f4fd,#d6eaf8);border-radius:var(--r);padding:16px;margin:0 14px 12px}
+        .water-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+        .water-title{font-weight:800;font-size:15px;color:#1a5276}
+        .water-goal{font-size:12px;color:#2980b9;font-weight:600}
+        .water-glasses{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+        .water-glass{font-size:22px;cursor:pointer;transition:transform .15s;filter:grayscale(1);opacity:.35}
+        .water-glass.filled{filter:none;opacity:1;transform:scale(1.1)}
+        .water-controls{display:flex;gap:8px;align-items:center;justify-content:center}
+        .water-btn{width:36px;height:36px;border-radius:50%;border:none;font-size:20px;font-weight:900;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .15s}
+        .water-btn:active{transform:scale(.9)}
+        .water-btn.minus{background:#d6eaf8;color:#2980b9}
+        .water-btn.plus{background:#2980b9;color:#fff}
+        .water-count{font-size:18px;font-weight:900;color:#1a5276;min-width:80px;text-align:center}
+
+        /* ─── Saved meals ─── */
+        .meal-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)}
+        .meal-item:last-child{border-bottom:none}
+        .meal-info{flex:1}
+        .meal-name{font-weight:700;font-size:14px}
+        .meal-cal{font-size:12px;color:var(--sub);margin-top:2px}
+        .meal-log-btn{padding:7px 14px;background:var(--green);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer}
+        .meal-del-btn{background:none;border:none;font-size:16px;cursor:pointer;color:#ccc;padding:4px}
+
+        /* ─── Weekly chart ─── */
+        .weekly-chart{background:var(--card);border-radius:var(--r);margin:0 14px 12px;padding:16px;box-shadow:var(--shadow)}
+        .weekly-chart h4{font-size:14px;font-weight:800;margin-bottom:14px;color:var(--text)}
+        .wc-bars{display:flex;gap:6px;align-items:flex-end;height:80px}
+        .wc-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+        .wc-bar{width:100%;border-radius:6px 6px 0 0;min-height:4px;transition:height .3s}
+        .wc-day{font-size:10px;color:var(--sub);font-weight:600}
+        .wc-val{font-size:9px;color:var(--sub)}
+
+        /* ─── Cheat day ─── */
+        .cheat-btn{padding:5px 10px;border-radius:10px;border:1.5px solid #e67e22;background:transparent;color:#e67e22;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s}
+        .cheat-btn.active{background:#e67e22;color:#fff}
+
         /* ─── History tab ─── */
         .hist-item{
             padding:14px 16px;border-bottom:1px solid var(--border);
@@ -272,7 +309,7 @@
         .hist-total{font-weight:800;font-size:14px}
         .hist-bar-bg{background:#f0f4f8;border-radius:6px;height:7px;overflow:hidden}
         .hist-bar-fill{height:100%;border-radius:6px;transition:width .4s}
-        .hist-sub{display:flex;justify-content:space-between;font-size:11px;color:var(--sub);margin-top:4px}
+        .hist-sub{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--sub);margin-top:6px}
 
         /* ─── Weight tab ─── */
         .weight-hero{
@@ -555,6 +592,33 @@
       </div>
     </div>
 
+    <!-- Water tracker -->
+    <div class="water-card">
+      <div class="water-header">
+        <span class="water-title">💧 מעקב שתייה</span>
+        <span class="water-goal" id="water-goal-lbl">0 / 8 כוסות</span>
+      </div>
+      <div class="water-glasses" id="water-glasses"></div>
+      <div class="water-controls">
+        <button class="water-btn minus" onclick="changeWater(-1)">−</button>
+        <span class="water-count" id="water-count-lbl">0 כוסות היום</span>
+        <button class="water-btn plus" onclick="changeWater(1)">+</button>
+      </div>
+    </div>
+
+    <!-- Saved meals -->
+    <div class="card" id="saved-meals-card">
+      <div class="card-hdr">
+        <span class="card-title">⚡ ארוחות מהירות</span>
+        <button class="btn-sm" onclick="openSaveMealModal()">+ שמור ארוחה</button>
+      </div>
+      <div id="saved-meals-list">
+        <div class="empty-state" style="padding:20px">
+          <p>שמור ארוחה שחוזרת על עצמה להוספה מהירה</p>
+        </div>
+      </div>
+    </div>
+
     <!-- Activity list -->
     <div class="card">
       <div class="card-hdr">
@@ -588,6 +652,13 @@
   <!-- History panel -->
   <div class="tab-panel hidden" id="panel-history">
     <div class="sec-hdr"><h3>📅 היסטוריית ימים</h3></div>
+
+    <!-- Weekly chart -->
+    <div class="weekly-chart" id="weekly-chart" style="display:none">
+      <h4>📊 7 הימים האחרונים</h4>
+      <div class="wc-bars" id="wc-bars"></div>
+    </div>
+
     <div class="card" id="hist-card">
       <div class="empty-state"><div class="empty-icon">📅</div><p>אין נתונים עדיין</p></div>
     </div>
@@ -862,6 +933,25 @@
     <div class="modal-row">
       <button class="btn-cancel" onclick="closeModal('weight-overlay')">ביטול</button>
       <button class="btn-save"   onclick="submitWeight()">שמור ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ SAVE MEAL MODAL ══════ -->
+<div class="overlay hidden" id="save-meal-overlay">
+  <div class="modal">
+    <div class="drag-h"></div>
+    <h3>⚡ שמירת ארוחה מהירה</h3>
+    <p style="font-size:13px;color:var(--sub);margin-bottom:14px">שמור את הארוחה הנוכחית מהיום לשימוש חוזר בלחיצה אחת</p>
+    <div class="fg"><label>שם הארוחה</label>
+      <input type="text" id="meal-save-name" placeholder="ארוחת בוקר קבועה, סלט צהריים...">
+    </div>
+    <div id="meal-save-preview" style="padding:10px;background:#f8fafc;border-radius:12px;font-size:13px;color:var(--sub);margin-bottom:14px">
+      טוען פריטים מהיום...
+    </div>
+    <div class="modal-row">
+      <button class="btn-cancel" onclick="closeModal('save-meal-overlay')">ביטול</button>
+      <button class="btn-save" onclick="confirmSaveMeal()">שמור ✓</button>
     </div>
   </div>
 </div>
@@ -1314,6 +1404,8 @@ async function loadToday() {
     renderFoodList(foods);
     renderActivityList(activities);
     renderProgress(foods);
+    loadWater();
+    loadSavedMeals();
 }
 
 function renderFoodList(foods) {
@@ -1421,6 +1513,146 @@ async function removeActivity(id) {
     await api.del(`/api/activity/${id}`);
     toast('הוסר');
     await loadToday();
+}
+
+/* ── Water tracking ────────── */
+let waterGlasses = 0;
+const WATER_GOAL = 8;
+
+async function loadWater() {
+    const data = await api.get('/api/water');
+    waterGlasses = data.glasses || 0;
+    renderWater();
+}
+
+function renderWater() {
+    const glasses = [];
+    for (let i = 0; i < WATER_GOAL; i++) {
+        glasses.push(`<span class="water-glass ${i < waterGlasses ? 'filled' : ''}" onclick="setWater(${i+1})">💧</span>`);
+    }
+    document.getElementById('water-glasses').innerHTML = glasses.join('');
+    document.getElementById('water-goal-lbl').textContent = waterGlasses + ' / ' + WATER_GOAL + ' כוסות';
+    document.getElementById('water-count-lbl').textContent = waterGlasses + ' כוסות היום';
+}
+
+async function changeWater(delta) {
+    const newVal = Math.max(0, Math.min(WATER_GOAL + 4, waterGlasses + delta));
+    await api.post('/api/water', {glasses: newVal});
+    waterGlasses = newVal;
+    renderWater();
+    if (newVal >= WATER_GOAL) toast('🎉 הגעת ליעד המים היומי!');
+}
+
+async function setWater(n) {
+    const newVal = waterGlasses === n ? n - 1 : n;
+    await api.post('/api/water', {glasses: newVal});
+    waterGlasses = newVal;
+    renderWater();
+}
+
+/* ── Saved meals ────────── */
+let todayFoodsCache = [];
+
+async function loadSavedMeals() {
+    const meals = await api.get('/api/saved-meals');
+    renderSavedMeals(meals);
+}
+
+function renderSavedMeals(meals) {
+    const el = document.getElementById('saved-meals-list');
+    if (!meals || !meals.length) {
+        el.innerHTML = '<div class="empty-state" style="padding:20px"><p>שמור ארוחה שחוזרת על עצמה להוספה מהירה</p></div>';
+        return;
+    }
+    el.innerHTML = meals.map(m => `
+        <div class="meal-item">
+            <div class="meal-info">
+                <div class="meal-name">${esc(m.name)}</div>
+                <div class="meal-cal">${m.total_cal} קל' · ${JSON.parse(m.items_json).length} פריטים</div>
+            </div>
+            <button class="meal-log-btn" onclick="logSavedMeal(${m.id})">הוסף</button>
+            <button class="meal-del-btn" onclick="deleteSavedMeal(${m.id})">🗑️</button>
+        </div>`).join('');
+}
+
+async function logSavedMeal(id) {
+    const res = await api.post(`/api/saved-meals/${id}/log`, {});
+    toast(`✅ נוספו ${res.added} פריטים`);
+    await loadToday();
+}
+
+async function deleteSavedMeal(id) {
+    await api.del(`/api/saved-meals/${id}`);
+    toast('נמחק');
+    await loadSavedMeals();
+}
+
+async function openSaveMealModal() {
+    const foods = await api.get('/api/food');
+    todayFoodsCache = foods || [];
+    const preview = document.getElementById('meal-save-preview');
+    if (!foods || !foods.length) {
+        preview.innerHTML = '<span style="color:var(--red)">אין מזון מהיום לשמירה</span>';
+    } else {
+        const total = foods.reduce((s,f) => s+f.calories, 0);
+        preview.innerHTML = foods.map(f => `<div>• ${esc(f.food_name)} — ${f.calories} קל'</div>`).join('') +
+            `<div style="font-weight:800;margin-top:6px;color:var(--text)">סה"כ: ${total} קל'</div>`;
+    }
+    document.getElementById('meal-save-name').value = '';
+    openModal('save-meal-overlay');
+}
+
+async function confirmSaveMeal() {
+    const name = document.getElementById('meal-save-name').value.trim();
+    if (!name) { toast('הכנס שם לארוחה'); return; }
+    if (!todayFoodsCache.length) { toast('אין פריטים לשמירה'); return; }
+    const items = todayFoodsCache.map(f => ({name: f.food_name, calories: f.calories}));
+    const total = items.reduce((s,i) => s+i.calories, 0);
+    await api.post('/api/saved-meals', {name, items, total_cal: total});
+    closeModal('save-meal-overlay');
+    toast('✅ ארוחה נשמרה!');
+    await loadSavedMeals();
+}
+
+/* ── Weekly chart ────────── */
+function renderWeeklyChart(weekly, goal) {
+    if (!weekly || !weekly.length) return;
+    document.getElementById('weekly-chart').style.display = 'block';
+    const days = ['א','ב','ג','ד','ה','ו','ש'];
+    const maxVal = Math.max(...weekly.map(w => w.total), goal);
+    document.getElementById('wc-bars').innerHTML = weekly.map(w => {
+        const pct = Math.min(w.total / maxVal, 1) * 100;
+        const color = w.total <= goal ? 'var(--green)' : 'var(--red)';
+        const d = new Date(w.date + 'T12:00:00');
+        const dayName = days[d.getDay()];
+        return `<div class="wc-col">
+            <div class="wc-val">${Math.round(w.total/100)/10}k</div>
+            <div class="wc-bar" style="height:${pct}%;background:${color}"></div>
+            <div class="wc-day">${dayName}</div>
+        </div>`;
+    }).join('');
+}
+
+/* ── Cheat day ────────── */
+let cheatDays = new Set();
+
+async function loadCheatDays() {
+    const days = await api.get('/api/cheat-days');
+    cheatDays = new Set(days);
+}
+
+async function toggleCheatDay(dateStr, btn) {
+    const res = await api.post('/api/cheat-day', {date: dateStr});
+    if (res.cheat) {
+        cheatDays.add(dateStr);
+        btn.classList.add('active');
+        btn.textContent = '🍕 יום צ\'יט';
+        toast('🎉 יום צ\'יט מסומן!');
+    } else {
+        cheatDays.delete(dateStr);
+        btn.classList.remove('active');
+        btn.textContent = '🍕 סמן צ\'יט';
+    }
 }
 
 /* ── Add Food Modal ────────── */
@@ -1643,6 +1875,8 @@ async function submitManual() {
 /* ── History tab ────────── */
 async function loadHistory() {
     const data = await api.get('/api/history');
+    cheatDays = new Set(data.cheat_days || []);
+    renderWeeklyChart(data.weekly, data.goal);
     renderHistory(data.history, data.goal);
 }
 
@@ -1659,8 +1893,9 @@ function renderHistory(hist, goal) {
         const diffTxt = diff >= 0
             ? `<span style="color:var(--red)">+${diff.toLocaleString()} קל' מעל</span>`
             : `<span style="color:var(--green)">${Math.abs(diff).toLocaleString()} קל' תחת</span>`;
-        return `<div class="hist-item" onclick="openHistoryDay('${h.date}')" style="cursor:pointer">
-            <div class="hist-top">
+        const isCheat = cheatDays.has(h.date);
+        return `<div class="hist-item">
+            <div class="hist-top" onclick="openHistoryDay('${h.date}')" style="cursor:pointer">
                 <span class="hist-date">${formatDate(h.date)}</span>
                 <span style="display:flex;align-items:center;gap:8px">
                   <span class="hist-total" style="color:${color}">${h.total.toLocaleString()} קל'</span>
@@ -1671,8 +1906,11 @@ function renderHistory(hist, goal) {
                 <div class="hist-bar-fill" style="width:${Math.min(pct,1)*100}%;background:${color}"></div>
             </div>
             <div class="hist-sub">
-                <span>${h.entries} פריטים</span>
-                ${diffTxt}
+                <span>${h.entries} פריטים · ${diffTxt}</span>
+                <button class="cheat-btn ${isCheat?'active':''}" id="cheat-${h.date}"
+                  onclick="toggleCheatDay('${h.date}', this)">
+                  🍕 ${isCheat ? "יום צ'יט" : "סמן צ'יט"}
+                </button>
             </div>
         </div>`;
     }).join('');

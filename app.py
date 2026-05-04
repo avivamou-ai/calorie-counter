@@ -80,6 +80,28 @@ def init_db():
         timestamp    TEXT    NOT NULL
     )''')
 
+    c.execute('''CREATE TABLE IF NOT EXISTS water_log (
+        id      INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL DEFAULT 1,
+        date    TEXT    NOT NULL,
+        glasses INTEGER NOT NULL DEFAULT 0
+    )''')
+
+    c.execute('''CREATE TABLE IF NOT EXISTS saved_meals (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id    INTEGER NOT NULL DEFAULT 1,
+        name       TEXT    NOT NULL,
+        items_json TEXT    NOT NULL,
+        total_cal  INTEGER NOT NULL,
+        created_at TEXT    NOT NULL
+    )''')
+
+    c.execute('''CREATE TABLE IF NOT EXISTS cheat_days (
+        id      INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL DEFAULT 1,
+        date    TEXT    NOT NULL UNIQUE
+    )''')
+
     # Migrate: add missing columns
     migrations = {
         'user_profile': ['user_id', 'goal_weight'],
@@ -381,6 +403,105 @@ def delete_activity(aid):
     return jsonify({'success': True})
 
 
+# ── Water ──────────────────────────────────────────────────────────
+@app.route('/api/water', methods=['GET'])
+def get_water():
+    log_date = request.args.get('date', date.today().isoformat())
+    conn = get_db()
+    row = conn.execute('SELECT glasses FROM water_log WHERE user_id=? AND date=?', (uid(), log_date)).fetchone()
+    conn.close()
+    return jsonify({'glasses': row['glasses'] if row else 0})
+
+@app.route('/api/water', methods=['POST'])
+def set_water():
+    data = request.get_json()
+    glasses = int(data.get('glasses', 0))
+    today = date.today().isoformat()
+    user_id = uid()
+    conn = get_db()
+    conn.execute('DELETE FROM water_log WHERE user_id=? AND date=?', (user_id, today))
+    conn.execute('INSERT INTO water_log (user_id, date, glasses) VALUES (?,?,?)', (user_id, today, glasses))
+    conn.commit()
+    conn.close()
+    return jsonify({'glasses': glasses})
+
+
+# ── Saved Meals ─────────────────────────────────────────────────────
+@app.route('/api/saved-meals', methods=['GET'])
+def get_saved_meals():
+    conn = get_db()
+    rows = conn.execute('SELECT * FROM saved_meals WHERE user_id=? ORDER BY name', (uid(),)).fetchall()
+    conn.close()
+    return jsonify([dict(r) for r in rows])
+
+@app.route('/api/saved-meals', methods=['POST'])
+def save_meal():
+    data = request.get_json()
+    conn = get_db()
+    cur = conn.execute(
+        'INSERT INTO saved_meals (user_id, name, items_json, total_cal, created_at) VALUES (?,?,?,?,?)',
+        (uid(), data['name'], json.dumps(data['items'], ensure_ascii=False),
+         int(data['total_cal']), datetime.now().isoformat())
+    )
+    conn.commit()
+    mid = cur.lastrowid
+    conn.close()
+    return jsonify({'id': mid})
+
+@app.route('/api/saved-meals/<int:mid>', methods=['DELETE'])
+def delete_saved_meal(mid):
+    conn = get_db()
+    conn.execute('DELETE FROM saved_meals WHERE id=? AND user_id=?', (mid, uid()))
+    conn.commit()
+    conn.close()
+    return jsonify({'success': True})
+
+@app.route('/api/saved-meals/<int:mid>/log', methods=['POST'])
+def log_saved_meal(mid):
+    user_id = uid()
+    conn = get_db()
+    meal = conn.execute('SELECT * FROM saved_meals WHERE id=? AND user_id=?', (mid, user_id)).fetchone()
+    if not meal:
+        conn.close()
+        return jsonify({'error': 'not found'}), 404
+    items = json.loads(meal['items_json'])
+    today = date.today().isoformat()
+    for item in items:
+        conn.execute(
+            'INSERT INTO food_log (user_id, date, food_name, calories, timestamp) VALUES (?,?,?,?,?)',
+            (user_id, today, item['name'], item['calories'], datetime.now().isoformat())
+        )
+    conn.commit()
+    conn.close()
+    return jsonify({'added': len(items)})
+
+
+# ── Cheat Days ──────────────────────────────────────────────────────
+@app.route('/api/cheat-day', methods=['POST'])
+def toggle_cheat_day():
+    data = request.get_json()
+    day = data.get('date', date.today().isoformat())
+    user_id = uid()
+    conn = get_db()
+    existing = conn.execute('SELECT id FROM cheat_days WHERE user_id=? AND date=?', (user_id, day)).fetchone()
+    if existing:
+        conn.execute('DELETE FROM cheat_days WHERE user_id=? AND date=?', (user_id, day))
+        result = False
+    else:
+        conn.execute('INSERT OR IGNORE INTO cheat_days (user_id, date) VALUES (?,?)', (user_id, day))
+        result = True
+    conn.commit()
+    conn.close()
+    return jsonify({'cheat': result})
+
+@app.route('/api/cheat-days', methods=['GET'])
+def get_cheat_days():
+    conn = get_db()
+    rows = conn.execute('SELECT date FROM cheat_days WHERE user_id=? ORDER BY date DESC LIMIT 60', (uid(),)).fetchall()
+    conn.close()
+    return jsonify([r['date'] for r in rows])
+
+
 # ── Health Sync (iPhone Shortcuts) ─────────────────────────────────
 @app.route('/api/health-sync', methods=['POST'])
 def health_sync():
@@ -421,18 +542,32 @@ def health_sync():
 @app.route('/api/history', methods=['GET'])
 def get_history():
     days = request.args.get('days', 30, type=int)
+    user_id = uid()
     conn = get_db()
     history = conn.execute('''
         SELECT date, SUM(calories) AS total, COUNT(*) AS entries
         FROM food_log WHERE user_id=?
         GROUP BY date ORDER BY date DESC LIMIT ?
-    ''', (uid(), days)).fetchall()
+    ''', (user_id, days)).fetchall()
     profile = conn.execute(
-        'SELECT daily_goal FROM user_profile WHERE user_id=? LIMIT 1', (uid(),)
+        'SELECT daily_goal FROM user_profile WHERE user_id=? LIMIT 1', (user_id,)
     ).fetchone()
+    cheat_days = [r['date'] for r in conn.execute(
+        'SELECT date FROM cheat_days WHERE user_id=?', (user_id,)
+    ).fetchall()]
+    # Weekly averages (last 7 days)
+    weekly = conn.execute('''
+        SELECT date, SUM(calories) AS total FROM food_log
+        WHERE user_id=? AND date >= date('now','-6 days')
+        GROUP BY date ORDER BY date
+    ''', (user_id,)).fetchall()
     conn.close()
-    return jsonify({'history': [dict(h) for h in history],
-                    'goal': profile['daily_goal'] if profile else 2000})
+    return jsonify({
+        'history': [dict(h) for h in history],
+        'goal': profile['daily_goal'] if profile else 2000,
+        'cheat_days': cheat_days,
+        'weekly': [dict(w) for w in weekly]
+    })
 
 
 # ── Stats ──────────────────────────────────────────────────────────
