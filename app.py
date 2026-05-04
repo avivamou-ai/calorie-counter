@@ -357,11 +357,12 @@ def get_activity():
 @app.route('/api/activity', methods=['POST'])
 def add_activity():
     data = request.get_json()
+    act_date = data.get('date') or date.today().isoformat()
     conn = get_db()
     cur = conn.execute(
         '''INSERT INTO activity_log (user_id, date, activity_type, calories_burned, steps, duration_min, note, timestamp)
            VALUES (?,?,?,?,?,?,?,?)''',
-        (uid(), date.today().isoformat(), data.get('activity_type','אחר'),
+        (uid(), act_date, data.get('activity_type','אחר'),
          int(data.get('calories_burned', 0)), int(data.get('steps', 0)),
          int(data.get('duration_min', 0)), data.get('note',''),
          datetime.now().isoformat())

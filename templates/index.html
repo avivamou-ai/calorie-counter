@@ -141,7 +141,7 @@
         .btn-primary:active{transform:scale(.98)}
 
         /* ═══════════════ MAIN ═══════════════ */
-        #main-screen{max-width:480px;margin:0 auto;padding-bottom:80px;min-height:100vh}
+        #main-screen{max-width:480px;margin:0 auto;padding-bottom:148px;min-height:100vh}
 
         .header{background:var(--hdr);color:#fff;padding:20px 18px 52px}
         .hdr-row{display:flex;justify-content:space-between;align-items:flex-start}
@@ -227,25 +227,39 @@
         .empty-state{padding:40px 20px;text-align:center;color:var(--sub)}
         .empty-icon{font-size:42px;margin-bottom:9px}
 
-        /* Float add buttons (today tab) */
-        .fab-row{
-            position:fixed;bottom:66px;left:50%;transform:translateX(-50%);
-            width:100%;max-width:480px;padding:0 14px;
-            display:grid;grid-template-columns:1fr 1fr;gap:10px;
-            pointer-events:none;
+        /* Action bar (today tab only) */
+        .action-bar{
+            position:fixed;bottom:62px;left:50%;transform:translateX(-50%);
+            width:100%;max-width:480px;
+            background:rgba(255,255,255,0.97);
+            backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+            border-top:1px solid var(--border);
+            display:flex;align-items:center;justify-content:space-between;
+            padding:10px 20px 10px;z-index:700;
         }
-        .fab-row button{pointer-events:all}
-        .btn-act{
-            padding:13px 8px;border:none;border-radius:14px;font-size:14px;
-            font-weight:700;font-family:inherit;cursor:pointer;
-            transition:transform .15s,opacity .15s;
-            display:flex;align-items:center;justify-content:center;gap:6px;
-            box-shadow:0 4px 16px rgba(0,0,0,.15);
+        .action-btn-side{
+            flex:1;padding:10px 6px;border:none;border-radius:14px;
+            font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;
+            display:flex;flex-direction:column;align-items:center;gap:4px;
+            transition:transform .15s,opacity .15s;background:none;color:var(--text);
         }
-        .btn-act:active{transform:scale(.96);opacity:.85}
-        .btn-manual{background:linear-gradient(135deg,#3498db,#2471a3);color:#fff}
-        .btn-activity{background:linear-gradient(135deg,#e67e22,#ca6f1e);color:#fff}
-        .btn-photo{background:linear-gradient(135deg,#9b59b6,#7d3c98);color:#fff}
+        .action-btn-side:active{transform:scale(.94)}
+        .action-btn-side .ab-icon{font-size:22px;line-height:1}
+        .action-btn-side .ab-label{font-size:11px;font-weight:700}
+        .action-btn-side.food .ab-icon{color:#2980b9}
+        .action-btn-side.food .ab-label{color:#2980b9}
+        .action-btn-side.activity .ab-icon{color:#e67e22}
+        .action-btn-side.activity .ab-label{color:#e67e22}
+        .action-btn-center{
+            width:58px;height:58px;border-radius:50%;border:none;
+            background:linear-gradient(135deg,var(--green-l),var(--green));
+            color:#fff;font-size:30px;cursor:pointer;flex-shrink:0;
+            box-shadow:0 4px 20px rgba(39,174,96,.45);
+            display:flex;align-items:center;justify-content:center;
+            margin:0 16px;transform:translateY(-10px);
+            transition:transform .15s,box-shadow .15s;
+        }
+        .action-btn-center:active{transform:translateY(-8px) scale(.94);box-shadow:0 2px 10px rgba(39,174,96,.3)}
         .orange{color:var(--orange)!important}
 
         /* ─── History tab ─── */
@@ -555,11 +569,19 @@
       </div>
     </div>
 
-    <!-- FAB buttons -->
-    <div class="fab-row">
-      <button class="btn-act btn-manual" onclick="openAddModal()">🔍 הוסף מזון</button>
-      <button class="btn-act btn-activity" onclick="openModal('activity-overlay')">🏃 הוסף פעילות</button>
-      <button class="btn-act btn-photo"  onclick="openModal('image-overlay')">📷 AI צילום</button>
+    <!-- Action bar -->
+    <div class="action-bar" id="action-bar">
+      <button class="action-btn-side food" onclick="openAddModal()">
+        <span class="ab-icon">🍽️</span>
+        <span class="ab-label">הוסף מזון</span>
+      </button>
+      <button class="action-btn-center" onclick="openModal('image-overlay')" title="צילום AI">
+        +
+      </button>
+      <button class="action-btn-side activity" onclick="openActivityModal()">
+        <span class="ab-icon">🏃</span>
+        <span class="ab-label">הוסף פעילות</span>
+      </button>
     </div>
   </div>
 
@@ -844,11 +866,27 @@
   </div>
 </div>
 
+<!-- ══════ HISTORY DAY MODAL ══════ -->
+<div class="overlay hidden" id="hday-overlay">
+  <div class="modal" style="max-height:80vh;overflow-y:auto">
+    <div class="drag-h"></div>
+    <h3 id="hday-title">📅</h3>
+    <div id="hday-list"></div>
+    <div class="modal-row" style="margin-top:12px">
+      <button class="btn-save" style="width:100%" onclick="closeModal('hday-overlay')">סגור</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══════ ACTIVITY MODAL ══════ -->
 <div class="overlay hidden" id="activity-overlay">
   <div class="modal">
     <div class="drag-h"></div>
     <h3>🏃 הוספת פעילות גופנית</h3>
+
+    <div class="fg"><label>תאריך</label>
+      <div class="iw"><input type="date" id="act-date" style="padding-left:14px"></div>
+    </div>
 
     <div class="fg"><label>סוג פעילות</label>
       <select id="act-type" style="width:100%;padding:13px 16px;border:2px solid var(--border);border-radius:12px;font-size:16px;font-family:inherit;direction:rtl;background:#fff">
@@ -1355,14 +1393,21 @@ async function removeFood(id) {
     await loadToday();
 }
 
+function openActivityModal() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('act-date').value = today;
+    openModal('activity-overlay');
+}
+
 async function submitActivity() {
-    const type = document.getElementById('act-type').value;
-    const cal  = parseInt(document.getElementById('act-cal').value) || 0;
-    const dur  = parseInt(document.getElementById('act-dur').value) || 0;
+    const type  = document.getElementById('act-type').value;
+    const cal   = parseInt(document.getElementById('act-cal').value) || 0;
+    const dur   = parseInt(document.getElementById('act-dur').value) || 0;
     const steps = parseInt(document.getElementById('act-steps').value) || 0;
-    const note = document.getElementById('act-note').value.trim();
+    const note  = document.getElementById('act-note').value.trim();
+    const actDate = document.getElementById('act-date').value;
     if (!cal) { toast('הכנס קלוריות שנשרפו'); return; }
-    await api.post('/api/activity', {activity_type: type, calories_burned: cal, duration_min: dur, steps, note});
+    await api.post('/api/activity', {activity_type: type, calories_burned: cal, duration_min: dur, steps, note, date: actDate});
     closeModal('activity-overlay');
     document.getElementById('act-cal').value = '';
     document.getElementById('act-dur').value = '';
@@ -1614,10 +1659,13 @@ function renderHistory(hist, goal) {
         const diffTxt = diff >= 0
             ? `<span style="color:var(--red)">+${diff.toLocaleString()} קל' מעל</span>`
             : `<span style="color:var(--green)">${Math.abs(diff).toLocaleString()} קל' תחת</span>`;
-        return `<div class="hist-item">
+        return `<div class="hist-item" onclick="openHistoryDay('${h.date}')" style="cursor:pointer">
             <div class="hist-top">
                 <span class="hist-date">${formatDate(h.date)}</span>
-                <span class="hist-total" style="color:${color}">${h.total.toLocaleString()} קל'</span>
+                <span style="display:flex;align-items:center;gap:8px">
+                  <span class="hist-total" style="color:${color}">${h.total.toLocaleString()} קל'</span>
+                  <span style="color:var(--sub);font-size:16px">›</span>
+                </span>
             </div>
             <div class="hist-bar-bg">
                 <div class="hist-bar-fill" style="width:${Math.min(pct,1)*100}%;background:${color}"></div>
@@ -1628,6 +1676,32 @@ function renderHistory(hist, goal) {
             </div>
         </div>`;
     }).join('');
+}
+
+async function openHistoryDay(date) {
+    const foods = await api.get('/api/food?date=' + date);
+    const title = document.getElementById('hday-title');
+    const list  = document.getElementById('hday-list');
+    title.textContent = '📅 ' + formatDate(date);
+    if (!foods || !foods.length) {
+        list.innerHTML = '<div class="empty-state"><p>אין נתונים ליום זה</p></div>';
+    } else {
+        const total = foods.reduce((s,f) => s+f.calories, 0);
+        list.innerHTML = `
+            <div style="padding:8px 0 12px;font-weight:800;font-size:15px;color:var(--text)">
+                סה"כ: ${total.toLocaleString()} קל'
+            </div>` +
+            foods.map(f => `
+            <div class="food-item">
+                <span class="f-emoji">${foodEmoji(f.food_name)}</span>
+                <div class="f-info">
+                    <div class="f-name">${esc(f.food_name)}</div>
+                    <div class="f-time">${fmtTime(f.timestamp)}</div>
+                </div>
+                <span class="f-cal">${f.calories.toLocaleString()} קל'</span>
+            </div>`).join('');
+    }
+    openModal('hday-overlay');
 }
 
 /* ── Weight tab ────────── */
@@ -1852,8 +1926,8 @@ function switchTab(tab) {
     if (tab==='history') loadHistory();
     if (tab==='weight')  loadWeight();
     if (tab==='profile') loadStats();
-    // FAB buttons only on today
-    document.querySelector('.fab-row').style.display = tab==='today' ? 'grid' : 'none';
+    // Action bar only on today
+    document.getElementById('action-bar').style.display = tab==='today' ? 'flex' : 'none';
 }
 
 /* ── Image analysis ────────── */
