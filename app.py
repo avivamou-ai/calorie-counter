@@ -675,8 +675,24 @@ def analyze_image():
     data       = request.get_json()
     img        = data['image']
     media_type = data.get('media_type','image/jpeg')
+    mode       = data.get('mode', 'food')
     if ',' in img:
         img = img.split(',')[1]
+
+    if mode == 'label':
+        prompt = (
+            'זוהי תמונה של תווית תזונה. קרא את הערכים מהתווית. '
+            'ענה אך ורק ב-JSON תקין, ללא טקסט נוסף:\n'
+            '{"food_name":"שם המוצר בעברית","calories":קלוריות_למנה_כמספר_שלם,'
+            '"description":"גודל מנה והערות נוספות מהתווית"}'
+        )
+    else:
+        prompt = (
+            'זהה את המזון בתמונה והעריך קלוריות. '
+            'ענה אך ורק ב-JSON תקין, ללא טקסט נוסף:\n'
+            '{"food_name":"שם המזון בעברית","calories":מספר_שלם,'
+            '"description":"הסבר קצר"}'
+        )
 
     client = anthropic.Anthropic(api_key=api_key)
     try:
@@ -684,12 +700,7 @@ def analyze_image():
             model='claude-haiku-4-5-20251001', max_tokens=512,
             messages=[{'role':'user','content':[
                 {'type':'image','source':{'type':'base64','media_type':media_type,'data':img}},
-                {'type':'text','text':(
-                    'זהה את המזון בתמונה והעריך קלוריות. '
-                    'ענה אך ורק ב-JSON תקין, ללא טקסט נוסף:\n'
-                    '{"food_name":"שם המזון בעברית","calories":מספר_שלם,'
-                    '"description":"הסבר קצר"}'
-                )}
+                {'type':'text','text': prompt}
             ]}]
         )
         text  = msg.content[0].text.strip()
@@ -699,6 +710,55 @@ def analyze_image():
         return jsonify({'error': 'לא ניתן לנתח', 'raw': text}), 500
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+
+# ── Compare ────────────────────────────────────────────────────────
+@app.route('/api/compare', methods=['GET'])
+def compare_users():
+    conn  = get_db()
+    users = conn.execute('SELECT * FROM users ORDER BY id').fetchall()
+    today = date.today().isoformat()
+    result = []
+    for u in users:
+        uid_val = u['id']
+        profile = conn.execute(
+            'SELECT * FROM user_profile WHERE user_id=? LIMIT 1', (uid_val,)
+        ).fetchone()
+        goal = profile['daily_goal'] if profile else 2000
+        today_row = conn.execute(
+            'SELECT SUM(calories) AS total FROM food_log WHERE user_id=? AND date=?',
+            (uid_val, today)
+        ).fetchone()
+        tracked = conn.execute(
+            'SELECT COUNT(DISTINCT date) AS cnt FROM food_log WHERE user_id=?', (uid_val,)
+        ).fetchone()
+        on_track = conn.execute(
+            '''SELECT COUNT(*) AS cnt FROM (
+               SELECT date FROM food_log WHERE user_id=?
+               GROUP BY date HAVING SUM(calories) <= ?)''',
+            (uid_val, goal)
+        ).fetchone()
+        avg_cal = conn.execute(
+            'SELECT AVG(daily) AS avg FROM (SELECT SUM(calories) AS daily FROM food_log WHERE user_id=? GROUP BY date)',
+            (uid_val,)
+        ).fetchone()
+        weight = conn.execute(
+            'SELECT weight FROM weight_log WHERE user_id=? ORDER BY date DESC, time DESC LIMIT 1',
+            (uid_val,)
+        ).fetchone()
+        result.append({
+            'id':           uid_val,
+            'name':         u['name'],
+            'color':        u['color'],
+            'goal':         goal,
+            'today':        today_row['total'] or 0,
+            'tracked_days': tracked['cnt']    or 0,
+            'on_track':     on_track['cnt']   or 0,
+            'avg_cal':      int(avg_cal['avg'] or 0),
+            'weight':       weight['weight'] if weight else None
+        })
+    conn.close()
+    return jsonify(result)
 
 
 init_db()

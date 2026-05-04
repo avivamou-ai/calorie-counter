@@ -158,7 +158,7 @@
             position:fixed;bottom:0;left:50%;transform:translateX(-50%);
             width:100%;max-width:480px;
             background:#fff;border-top:1px solid var(--border);
-            display:grid;grid-template-columns:repeat(4,1fr);
+            display:grid;grid-template-columns:repeat(5,1fr);
             z-index:800;box-shadow:0 -2px 16px rgba(0,0,0,.07);
         }
         .tab{
@@ -294,6 +294,21 @@
         .wc-bar{width:100%;border-radius:6px 6px 0 0;min-height:4px;transition:height .3s}
         .wc-day{font-size:10px;color:var(--sub);font-weight:600}
         .wc-val{font-size:9px;color:var(--sub)}
+
+        /* ─── Compare tab ─── */
+        .compare-card{background:var(--card);border-radius:var(--r);padding:16px;margin:0 14px 12px;box-shadow:var(--shadow)}
+        .compare-user-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+        .compare-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;font-size:16px;flex-shrink:0}
+        .compare-name{font-weight:800;font-size:16px}
+        .compare-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:14px}
+        .compare-row:last-child{border-bottom:none}
+        .compare-lbl{color:var(--sub)}
+        .compare-val{font-weight:700}
+        .compare-vs{text-align:center;padding:10px 0;font-size:13px;color:var(--sub);font-weight:700}
+        .compare-bar-wrap{margin:8px 0}
+        .compare-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px;font-size:12px}
+        .compare-bar-bg{flex:1;height:10px;background:var(--border);border-radius:5px;overflow:hidden}
+        .compare-bar-fill{height:100%;border-radius:5px;transition:width .4s}
 
         /* ─── Cheat day ─── */
         .cheat-btn{padding:5px 10px;border-radius:10px;border:1.5px solid #e67e22;background:transparent;color:#e67e22;font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;transition:all .2s}
@@ -747,6 +762,28 @@
     </div>
   </div>
 
+  <!-- Compare panel -->
+  <div class="tab-panel hidden" id="panel-compare">
+    <div class="sec-hdr"><h3>👫 השוואה בין משתמשים</h3></div>
+    <div id="compare-content">
+      <div class="empty-state"><div class="empty-icon">👫</div><p>טוען נתונים...</p></div>
+    </div>
+
+    <!-- Notifications settings -->
+    <div class="card" style="margin-top:16px">
+      <div class="card-hdr"><span class="card-title">🔔 תזכורות יומיות</span></div>
+      <div style="padding:4px 0 12px;font-size:13px;color:var(--sub)">קבל תזכורת לרשום את הארוחות שלך</div>
+      <div id="notif-status" style="font-size:13px;margin-bottom:12px"></div>
+      <div class="fg"><label>שעת תזכורת</label>
+        <div class="two-col">
+          <div class="iw"><input type="time" id="notif-time" value="12:00" style="padding-left:14px"></div>
+          <button onclick="scheduleNotif()" style="padding:13px;background:var(--green);color:#fff;border:none;border-radius:12px;font-weight:700;font-family:inherit;cursor:pointer">הגדר</button>
+        </div>
+      </div>
+      <button onclick="testNotif()" style="width:100%;padding:11px;background:#f8fafc;border:1.5px solid var(--border);border-radius:12px;font-family:inherit;font-weight:700;cursor:pointer;margin-top:4px">🔔 שלח תזכורת ניסיון</button>
+    </div>
+  </div>
+
   <!-- Tab bar -->
   <div class="tab-bar">
     <button class="tab active" id="tab-today"   onclick="switchTab('today')">
@@ -760,6 +797,9 @@
     </button>
     <button class="tab" id="tab-profile" onclick="switchTab('profile')">
       <span class="tab-icon">👤</span><span class="tab-label">פרופיל</span>
+    </button>
+    <button class="tab" id="tab-compare" onclick="switchTab('compare')">
+      <span class="tab-icon">👫</span><span class="tab-label">השוואה</span>
     </button>
   </div>
 </div>
@@ -849,8 +889,34 @@
       <div class="fg"><label>שם המאכל</label>
         <input type="text" id="m-name" placeholder="כריך טונה, תפוח, קפה...">
       </div>
-      <div class="fg"><label>קלוריות</label>
-        <div class="iw"><input type="number" id="m-cals" placeholder="200" min="0" max="5000"><span class="unit">קל'</span></div>
+      <!-- Toggle: per serving / per 100g -->
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <button id="m-mode-serving" onclick="setManualMode('serving')"
+          style="flex:1;padding:9px;border-radius:10px;border:2px solid var(--green);background:var(--green);color:#fff;font-weight:700;font-family:inherit;cursor:pointer;font-size:13px">
+          לפי מנה
+        </button>
+        <button id="m-mode-100g" onclick="setManualMode('100g')"
+          style="flex:1;padding:9px;border-radius:10px;border:2px solid var(--border);background:#fff;color:var(--sub);font-weight:700;font-family:inherit;cursor:pointer;font-size:13px">
+          לפי 100 גרם
+        </button>
+      </div>
+      <!-- Per serving -->
+      <div id="m-serving-fields">
+        <div class="fg"><label>קלוריות</label>
+          <div class="iw"><input type="number" id="m-cals" placeholder="200" min="0" max="5000"><span class="unit">קל'</span></div>
+        </div>
+      </div>
+      <!-- Per 100g -->
+      <div id="m-100g-fields" style="display:none">
+        <div class="two-col">
+          <div class="fg"><label>קל' ל-100 גרם</label>
+            <div class="iw"><input type="number" id="m-cal100" placeholder="250" min="0" max="900" oninput="calcPer100g()"><span class="unit">קל'</span></div>
+          </div>
+          <div class="fg"><label>משקל</label>
+            <div class="iw"><input type="number" id="m-grams" placeholder="150" min="1" max="2000" oninput="calcPer100g()"><span class="unit">גרם</span></div>
+          </div>
+        </div>
+        <div id="m-100g-result" style="text-align:center;font-size:20px;font-weight:800;color:var(--green);padding:6px 0"></div>
       </div>
       <div class="modal-row">
         <button class="btn-cancel" onclick="closeModal('add-overlay')">ביטול</button>
@@ -868,12 +934,24 @@
 <div class="overlay hidden" id="image-overlay">
   <div class="modal">
     <div class="drag-h"></div>
-    <h3>📷 ניתוח תמונה עם AI</h3>
+    <h3 id="img-modal-title">📷 ניתוח תמונה עם AI</h3>
+
+    <!-- Mode toggle -->
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button id="img-mode-food" onclick="setImgMode('food')"
+        style="flex:1;padding:9px;border-radius:10px;border:2px solid var(--green);background:var(--green);color:#fff;font-weight:700;font-family:inherit;cursor:pointer;font-size:13px">
+        🍽️ צלם אוכל
+      </button>
+      <button id="img-mode-label" onclick="setImgMode('label')"
+        style="flex:1;padding:9px;border-radius:10px;border:2px solid var(--border);background:#fff;color:var(--sub);font-weight:700;font-family:inherit;cursor:pointer;font-size:13px">
+        🏷️ תווית תזונה
+      </button>
+    </div>
 
     <div id="img-step-upload">
       <div class="upload-zone" id="drop-zone" onclick="document.getElementById('file-inp').click()">
         <div class="up-icon">📸</div>
-        <p>לחץ לבחירת תמונה<br><small>צלם את האוכל שלך או העלה תמונה קיימת</small></p>
+        <p id="img-upload-hint">לחץ לבחירת תמונה<br><small>צלם את האוכל שלך או העלה תמונה קיימת</small></p>
       </div>
       <input type="file" id="file-inp" accept="image/*" style="display:none" onchange="onFilePicked(event)">
       <img id="img-preview" alt="">
@@ -884,7 +962,7 @@
     </div>
 
     <div id="img-step-loading" class="hidden">
-      <div class="loading-box"><div class="spinner"></div><p>ה-AI מנתח את האוכל...</p></div>
+      <div class="loading-box"><div class="spinner"></div><p id="img-loading-txt">ה-AI מנתח את האוכל...</p></div>
     </div>
 
     <div id="img-step-result" class="hidden">
@@ -1655,6 +1733,128 @@ async function toggleCheatDay(dateStr, btn) {
     }
 }
 
+/* ── Per-100g mode ────────── */
+let manualMode = 'serving';
+function setManualMode(mode) {
+    manualMode = mode;
+    document.getElementById('m-serving-fields').style.display = mode==='serving' ? '' : 'none';
+    document.getElementById('m-100g-fields').style.display    = mode==='100g'    ? '' : 'none';
+    const s = document.getElementById('m-mode-serving');
+    const g = document.getElementById('m-mode-100g');
+    s.style.background = mode==='serving' ? 'var(--green)' : '#fff';
+    s.style.color      = mode==='serving' ? '#fff' : 'var(--sub)';
+    s.style.borderColor= mode==='serving' ? 'var(--green)' : 'var(--border)';
+    g.style.background = mode==='100g' ? 'var(--green)' : '#fff';
+    g.style.color      = mode==='100g' ? '#fff' : 'var(--sub)';
+    g.style.borderColor= mode==='100g' ? 'var(--green)' : 'var(--border)';
+}
+function calcPer100g() {
+    const cal100 = parseFloat(document.getElementById('m-cal100').value) || 0;
+    const grams  = parseFloat(document.getElementById('m-grams').value)  || 0;
+    const total  = Math.round(cal100 * grams / 100);
+    document.getElementById('m-100g-result').textContent = total ? total + " קל'" : '';
+}
+
+/* ── Image mode (food / label) ────────── */
+let imgMode = 'food';
+function setImgMode(mode) {
+    imgMode = mode;
+    const f = document.getElementById('img-mode-food');
+    const l = document.getElementById('img-mode-label');
+    f.style.background  = mode==='food'  ? 'var(--green)' : '#fff';
+    f.style.color       = mode==='food'  ? '#fff' : 'var(--sub)';
+    f.style.borderColor = mode==='food'  ? 'var(--green)' : 'var(--border)';
+    l.style.background  = mode==='label' ? 'var(--green)' : '#fff';
+    l.style.color       = mode==='label' ? '#fff' : 'var(--sub)';
+    l.style.borderColor = mode==='label' ? 'var(--green)' : 'var(--border)';
+    document.getElementById('img-upload-hint').innerHTML = mode==='label'
+        ? 'צלם תווית תזונה<br><small>ה-AI יקרא את ערכי הקלוריות</small>'
+        : 'לחץ לבחירת תמונה<br><small>צלם את האוכל שלך</small>';
+    document.getElementById('img-loading-txt').textContent = mode==='label'
+        ? 'ה-AI קורא את התווית...' : 'ה-AI מנתח את האוכל...';
+}
+
+/* ── Compare tab ────────── */
+async function loadCompare() {
+    const el = document.getElementById('compare-content');
+    try {
+        const data = await fetch('/api/compare' + (currentUserId ? '?uid=' + currentUserId : '')).then(r=>r.json());
+        if (!data || !data.length) {
+            el.innerHTML = '<div class="empty-state"><div class="empty-icon">👫</div><p>צריך לפחות 2 משתמשים להשוואה</p></div>';
+            return;
+        }
+        const maxGoal = Math.max(...data.map(u => u.today || 0), 1);
+        el.innerHTML = data.map(u => `
+            <div class="compare-card">
+                <div class="compare-user-header">
+                    <div class="compare-avatar" style="background:${u.color}">${u.name.charAt(0)}</div>
+                    <div>
+                        <div class="compare-name">${esc(u.name)}</div>
+                        <div style="font-size:12px;color:var(--sub)">יעד: ${(u.goal||0).toLocaleString()} קל' ביום</div>
+                    </div>
+                </div>
+                <div class="compare-bar-wrap">
+                    <div class="compare-bar-row">
+                        <span style="min-width:60px">היום</span>
+                        <div class="compare-bar-bg">
+                            <div class="compare-bar-fill" style="width:${Math.min((u.today||0)/(u.goal||1),1)*100}%;background:${(u.today||0)<=(u.goal||1)?'var(--green)':'var(--red)'}"></div>
+                        </div>
+                        <span style="min-width:50px;text-align:left">${(u.today||0).toLocaleString()}</span>
+                    </div>
+                </div>
+                <div class="compare-row"><span class="compare-lbl">📅 ימי מעקב</span><span class="compare-val">${u.tracked_days||0}</span></div>
+                <div class="compare-row"><span class="compare-lbl">✅ ימים ביעד</span><span class="compare-val">${u.on_track||0}</span></div>
+                <div class="compare-row"><span class="compare-lbl">📊 ממוצע יומי</span><span class="compare-val">${(u.avg_cal||0).toLocaleString()} קל'</span></div>
+                <div class="compare-row"><span class="compare-lbl">⚖️ משקל נוכחי</span><span class="compare-val">${u.weight ? u.weight+' ק"ג' : '—'}</span></div>
+            </div>`).join('<div class="compare-vs">⚡ VS ⚡</div>');
+    } catch(e) {
+        el.innerHTML = '<div class="empty-state"><p>שגיאה בטעינת נתונים</p></div>';
+    }
+}
+
+/* ── Notifications ────────── */
+let notifTimer = null;
+async function scheduleNotif() {
+    if (!('Notification' in window)) { toast('הדפדפן לא תומך בהתראות'); return; }
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { toast('לא אושרו הרשאות להתראות'); updateNotifStatus(); return; }
+    const time = document.getElementById('notif-time').value || '12:00';
+    localStorage.setItem('notif_time', time);
+    if (notifTimer) clearInterval(notifTimer);
+    notifTimer = setInterval(() => checkNotifTime(time), 60000);
+    checkNotifTime(time);
+    toast('✅ תזכורת הוגדרה ל-' + time);
+    updateNotifStatus();
+}
+function checkNotifTime(target) {
+    const now = new Date();
+    const cur = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+    if (cur === target) {
+        new Notification('⏰ מונה קלוריות', {body: 'זמן לרשום את הארוחה שלך! 🍽️', icon: '/static/icon-192.png'});
+    }
+}
+async function testNotif() {
+    if (!('Notification' in window)) { toast('הדפדפן לא תומך בהתראות'); return; }
+    const perm = await Notification.requestPermission();
+    if (perm !== 'granted') { toast('לא אושרו הרשאות'); return; }
+    new Notification('⏰ מונה קלוריות', {body: 'זה תזכורת ניסיון - עובד! 🎉', icon: '/static/icon-192.png'});
+}
+function updateNotifStatus() {
+    const el = document.getElementById('notif-status');
+    if (!el) return;
+    if (!('Notification' in window)) { el.innerHTML = '<span style="color:var(--red)">הדפדפן לא תומך בהתראות</span>'; return; }
+    const saved = localStorage.getItem('notif_time');
+    if (Notification.permission === 'granted' && saved) {
+        document.getElementById('notif-time').value = saved;
+        el.innerHTML = `<span style="color:var(--green)">✅ תזכורת פעילה ב-${saved}</span>`;
+        if (!notifTimer) { notifTimer = setInterval(() => checkNotifTime(saved), 60000); }
+    } else if (Notification.permission === 'denied') {
+        el.innerHTML = '<span style="color:var(--red)">❌ הרשאות חסומות - שנה בהגדרות הדפדפן</span>';
+    } else {
+        el.innerHTML = '<span style="color:var(--sub)">לא הוגדרה תזכורת</span>';
+    }
+}
+
 /* ── Add Food Modal ────────── */
 function openAddModal() {
     openModal('add-overlay');
@@ -1862,12 +2062,22 @@ function stopCameraScan() {
 /* ── Manual add ────────── */
 async function submitManual() {
     const name = v('m-name').trim();
-    const cals = +v('m-cals');
     if (!name) { toast('אנא הכנס שם מאכל'); return; }
-    if (!cals || cals <= 0) { toast('אנא הכנס קלוריות'); return; }
+    let cals;
+    if (manualMode === '100g') {
+        const cal100 = parseFloat(document.getElementById('m-cal100').value) || 0;
+        const grams  = parseFloat(document.getElementById('m-grams').value)  || 0;
+        if (!cal100 || !grams) { toast('אנא הכנס קל׳ ל-100 גרם וגרמים'); return; }
+        cals = Math.round(cal100 * grams / 100);
+    } else {
+        cals = +v('m-cals');
+        if (!cals || cals <= 0) { toast('אנא הכנס קלוריות'); return; }
+    }
     await api.post('/api/food', {food_name: name, calories: cals});
     closeModal('add-overlay');
     set('m-name',''); set('m-cals','');
+    set('m-cal100',''); set('m-grams','');
+    document.getElementById('m-100g-result').textContent = '';
     toast('✅ נוסף!');
     await loadToday();
 }
@@ -2155,16 +2365,15 @@ function copySyncUrl() {
 /* ── Tabs ────────── */
 function switchTab(tab) {
     currentTab = tab;
-    ['today','history','weight','profile'].forEach(t => {
+    ['today','history','weight','profile','compare'].forEach(t => {
         document.getElementById('tab-' + t).classList.toggle('active', t===tab);
         document.getElementById('panel-' + t).classList.toggle('active', t===tab);
         document.getElementById('panel-' + t).classList.toggle('hidden', t!==tab);
     });
-    // Lazy load
     if (tab==='history') loadHistory();
     if (tab==='weight')  loadWeight();
     if (tab==='profile') loadStats();
-    // Action bar only on today
+    if (tab==='compare') loadCompare();
     document.getElementById('action-bar').style.display = tab==='today' ? 'flex' : 'none';
 }
 
@@ -2186,7 +2395,7 @@ function onFilePicked(e) {
 async function runAnalysis() {
     if (!imgData) return;
     show('img-step-loading'); hide('img-step-upload');
-    const res = await api.post('/api/analyze-image', {image: imgData, media_type: imgType});
+    const res = await api.post('/api/analyze-image', {image: imgData, media_type: imgType, mode: imgMode});
     hide('img-step-loading');
     if (res.error) { toast('שגיאה: ' + res.error, 4000); resetImg(); return; }
     document.getElementById('ai-food').textContent    = res.food_name || '';
