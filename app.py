@@ -15,7 +15,7 @@ except ImportError:
     ANTHROPIC_AVAILABLE = False
 
 app = Flask(__name__)
-DB_PATH = os.path.join(os.path.dirname(__file__), 'calorie_data.db')
+DB_PATH = os.environ.get('DB_PATH', os.path.join(os.path.dirname(__file__), 'calorie_data.db'))
 
 USER_COLORS = ['#27ae60','#2980b9','#8e44ad','#e67e22','#e74c3c','#16a085','#d35400','#2c3e50']
 
